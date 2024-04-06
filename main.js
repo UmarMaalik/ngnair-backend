@@ -36,7 +36,7 @@ app.post('/getToken',parseUrlEncodedData, async (req, res) => {
 });
 app.post('/createDraft', parseJsonData,async (req, res) => {
     try {
-    //   console.log("the req body is",req?.body?.businessInformation?.businessEmail);
+      console.log("the req body is",req?.body?.businessInformation?.businessEmail);
       const personEmail=req?.body?.businessInformation?.businessEmail;
       // Make a GET request to the third-party API
       const response = await axios.post('https://uat.rwaapps.net:8888/v1/boarding/applications/submit',req.body,{
@@ -46,10 +46,11 @@ app.post('/createDraft', parseJsonData,async (req, res) => {
       console.log("the data is ",response?.data);
       if(response)
       {
+        console.log('personal email',personEmail);
         Mailto(`<div><h3>Congratulations you are onboarded to our platform as a merchant.
         Please click the link to sign the required document</h3>
        <link href='${response?.data?.urlForSigning}'>${response?.data?.urlForSigning}</link>
-        </div>`,false,personEmail)
+        </div>`,false,[],personEmail)
       }
       // Return the response from the third-party API
       res.json(response.data);

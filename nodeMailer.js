@@ -3,6 +3,7 @@
 const nodemailer = require('nodemailer');
 
  async function Mailto(body, attach, filePaths, to) {
+    console.log("there ",to);
     
     try {
         const transporter = nodemailer.createTransport({
