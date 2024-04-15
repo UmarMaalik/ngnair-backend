@@ -18,7 +18,7 @@ const nodemailer = require('nodemailer');
 
         const mail = await transporter.sendMail({
             from: '"NGnair"<Hamzayousaf775@gmail.com>', // sender address
-            to: to || "umar.maalik@codeupscale.com", // list of receivers
+            to: to || "muhammad.ukkasha@codeupscale.com", // list of receivers
             cc: "hamzayousaf775@gmail.com",
             subject: "Application Submition is completed", // Subject line
             html: body, // html body

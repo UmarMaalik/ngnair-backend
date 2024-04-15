@@ -15,6 +15,8 @@ const parseUrlEncodedData = express.urlencoded({ extended: true });
 // Middleware for the '/createDraft' endpoint to parse JSON data
 const parseJsonData = express.json();
 // Define a route to call the third-party API
+
+
 app.post('/getToken',parseUrlEncodedData, async (req, res) => {
   try {
     console.log("the req body is",req?.body);
@@ -24,7 +26,7 @@ app.post('/getToken',parseUrlEncodedData, async (req, res) => {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
       })
-    console.log("the data is ",response);
+    // console.log("the data is ",response);
     accessToken=response?.data?.access_token
     // Return the response from the third-party API
     res.json(response.data);
@@ -34,6 +36,26 @@ app.post('/getToken',parseUrlEncodedData, async (req, res) => {
     res.status(500).json({ error: 'Error calling API' });
   }
 });
+
+
+app.post('/mccaliases',parseJsonData, async (req, res) => {
+  try{
+    console.log(req.body,"Data getting from front end for aliases");
+    const response = await axios.get('https://uat.rwaapps.net:8888/v1/boarding/configurations/mcc-aliases',{
+      headers: {
+        'Authorization': `Bearer ${req.body.token}`
+      }});
+    // console.log("Response Data for mcc-aliases",response);
+    res.json(response.data);
+  }
+  catch(error) {
+    console.error('Error calling API:', error?.response);
+    res.status(500).json({ error: 'Error calling API' });
+  }
+});
+
+
+
 app.post('/createDraft', parseJsonData,async (req, res) => {
     try {
       console.log("the req body is",req?.body?.businessInformation?.businessEmail);
@@ -43,7 +65,6 @@ app.post('/createDraft', parseJsonData,async (req, res) => {
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }})
-      console.log("the data is ",response?.data);
       if(response)
       {
         console.log('personal email',personEmail);
@@ -60,6 +81,9 @@ app.post('/createDraft', parseJsonData,async (req, res) => {
       res.status(500).json({ error: 'Error calling API' });
     }
   });
+
+
+
   app.get('/countries',async (req, res) => {
     try {
       console.log("the req body is",req);
@@ -75,9 +99,12 @@ app.post('/createDraft', parseJsonData,async (req, res) => {
       res.status(500).json({ error: 'Error calling API' });
     }
   });
+
+
+
   app.post('/cities',parseJsonData,async (req, res) => {
     try {
-      console.log("the req body is",req);
+      console.log("the req body is",req.body);
       // Make a GET request to the third-party API
       const response = await axios.post('https://countriesnow.space/api/v0.1/countries/state/cities',req?.body)
       console.log("the data is ",response);
@@ -86,10 +113,12 @@ app.post('/createDraft', parseJsonData,async (req, res) => {
       res.json(response.data);
     } catch (error) {
       // If an error occurs, return an error message
-      console.error('Error calling API:', error?.response?.data);
+      console.error('Error calling API:', error);
       res.status(500).json({ error: 'Error calling API' });
     }
   });
+
+
 
 // Start the server
 app.listen(port, () => {
