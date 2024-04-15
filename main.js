@@ -1,4 +1,5 @@
 // Import necessary modules
+const data =require( './data.json')
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
@@ -85,37 +86,82 @@ app.post('/createDraft', parseJsonData,async (req, res) => {
 
 
   app.get('/countries',async (req, res) => {
-    try {
-      console.log("the req body is",req);
-      // Make a GET request to the third-party API
-      const response = await axios.get('https://countriesnow.space/api/v0.1/countries/states')
-      console.log("the data is ",response);
-      
-      // Return the response from the third-party API
-      res.json(response.data);
-    } catch (error) {
-      // If an error occurs, return an error message
-      console.error('Error calling API:', error);
-      res.status(500).json({ error: 'Error calling API' });
+    console.log("the data uis",data);
+const countries=[];
+try{
+  for(country of data)
+  {
+    console.log("tge data uis",country?.name);
+    countries.push({
+      name:country?.name,
+      iso2:country?.iso2
+    })
+  }
+  console.log("going to send",countries.length);
+  res.json(countries);
+}catch(err)
+{
+  return "Unable to get countries"
+}
+
+
+
+  });
+  app.post('/state',parseJsonData,async (req, res) => {
+    console.log("the data is",req?.body?.country);
+
+    const temp=data.filter((item)=>item?.name===req?.body?.country)  
+      if(temp&& temp.length!==0)
+      {
+    console.log("The temo uis",temp[0]?.states);
+    const states=[];
+    for(state of temp[0]?.states)
+
+    {
+      states.push({
+        name:state?.name,
+        iso2:state?.state_code
+      })
     }
+    res.json(states);
+  }
+  else
+  {
+    res.json("nothing found");
+  }
   });
 
 
 
   app.post('/cities',parseJsonData,async (req, res) => {
-    try {
-      console.log("the req body is",req.body);
-      // Make a GET request to the third-party API
-      const response = await axios.post('https://countriesnow.space/api/v0.1/countries/state/cities',req?.body)
-      console.log("the data is ",response);
-      
-      // Return the response from the third-party API
-      res.json(response.data);
-    } catch (error) {
-      // If an error occurs, return an error message
-      console.error('Error calling API:', error);
-      res.status(500).json({ error: 'Error calling API' });
+    console.log("the req body is",req?.body);
+   const tempCities=data.filter((item)=>item?.name===req?.body?.country)
+   if(tempCities && tempCities.length!==0)
+   {
+    const stateCheck=tempCities[0]?.states.filter((item)=>item?.name===req?.body?.state)
+    if(stateCheck && stateCheck.length!==0)
+    {
+      console.log("the dataa iss",stateCheck);
+      const Cities=[];
+      for(city of stateCheck[0]?.cities)
+      {
+        Cities.push(city?.name)
+      }
+
+      res.json(Cities);
+
     }
+    else
+    {
+      res.json("No Cities for this State");
+
+    }
+   }
+   else
+   {
+    res.json("No state for this country");
+   }
+
   });
 
 
