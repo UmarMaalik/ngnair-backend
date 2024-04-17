@@ -6,12 +6,17 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const multer = require("multer");
 const Mailto = require("./nodeMailer");
-const FormData = require('form-data');
+const FormData = require("form-data");
+const fs = require("fs");
+const path = require("path");
+const { v4: uuidv4 } = require("uuid");
 // Create an Express app
+
+
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 const upload = multer();
 const port = 3009;
 
@@ -24,7 +29,6 @@ const parseJsonData = express.json();
 app.post("/getToken", async (req, res) => {
   try {
     console.log("the req body is", req?.body);
-    // Make a GET request to the third-party API
     const response = await axios.post(
       "https://uat.rwaapps.net:8888/oauth2/token",
       req.body,
@@ -34,12 +38,9 @@ app.post("/getToken", async (req, res) => {
         },
       }
     );
-    // console.log("the data is ",response);
     accessToken = response?.data?.access_token;
-    // Return the response from the third-party API
     res.json(response.data);
   } catch (error) {
-    // If an error occurs, return an error message
     console.error("Error calling API:", error);
     res.status(500).json({ error: "Error calling API" });
   }
@@ -102,41 +103,48 @@ app.post("/createDraft", async (req, res) => {
   }
 });
 
-app.post('/documents', upload.any(), async (req, res) => {
+app.post("/documents", upload.any(), async (req, res) => {
   try {
-    console.log("Request Body : ",req.body);
-    console.log("Request files : ",req.files);
+    console.log("Request Body : ", req.body);
+    console.log("Request files : ", req.files);
+    let arr = []
     const AppId = req.body.AppID;
 
+    const uploadDirectory = "public/";
+
+    req.files?.map(async (uploadedFile, index)=>{
+      
+    const filename = `${uuidv4()}${req.files[index].originalname}`;
+
+    const filePath = path.join(uploadDirectory, filename);
+    console.log("Upload DS", filePath);
+
+    fs.writeFileSync(filePath, req.files[index].buffer);
+
+    const formData = new FormData();
+    formData.append("Name", req.files[index].fieldname);
+    formData.append("Type", req.files[index].fieldname);
+    formData.append("File", fs.createReadStream(filePath));
+
+    const response = await axios.post(
+      `https://uat.rwaapps.net:8888/v1/boarding/applications/${AppId}/documents`,
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(), // Set appropriate headers for FormData
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    arr.push(response.data)
+  })
 
 
-    // const UtilityBillformData = new FormData();
-    // UtilityBillformData.append('Name', req.body.utilityBillFileName);
-    // UtilityBillformData.append('Type', req.body.utilityBillFileType);
-    // UtilityBillformData.append('File', req.files[0].buffer, {
-    //   filename: req.body.utilityBillFileName
-    // });
 
-    // const BussinessLicenseFormData = new FormData();
-    // BussinessLicenseFormData.append('Name', req.body.businessLicenseName);
-    // BussinessLicenseFormData.append('Type', req.body.businessLicenseType);
-    // BussinessLicenseFormData.append('File', req.files[1].buffer, {
-    //   filename: req.body.businessLicenseName
-    // });
+  res.json(arr);
 
-    // const response = await axios.post(
-    //   `https://uat.rwaapps.net:8888/v1/boarding/applications/${AppId}/documents`,
-    //   formData,
-    //   {
-    //     headers: {
-    //       ...formData.getHeaders(), // Set appropriate headers for FormData
-    //       Authorization: `Bearer ${accessToken}`
-    //     }
-    //   }
-    // );
-    res.status(200)
-    // res.json(response.data);
-  } catch (error) {
+} catch (error) {
     console.error("Error calling API:", error);
     res.status(500).json(error);
   }
@@ -233,7 +241,6 @@ app.post("/cities", async (req, res) => {
     res.json("No state for this country");
   }
 });
-
 
 // Start the server
 app.listen(port, () => {
