@@ -139,9 +139,6 @@ app.post("/documents", upload.any(), async (req, res) => {
 
     arr.push(response.data)
   })
-
-
-
   res.json(arr);
 
 } catch (error) {
