@@ -6,12 +6,15 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const multer = require("multer");
 const Mailto = require("./nodeMailer");
-const FormData = require('form-data');
+const FormData = require("form-data");
+const fs = require("fs");
+const path = require("path");
+const { v4: uuidv4 } = require("uuid");
 // Create an Express app
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 const upload = multer();
 const port = 3009;
 
@@ -102,19 +105,25 @@ app.post("/createDraft", async (req, res) => {
   }
 });
 
-app.post('/documents', upload.any(), async (req, res) => {
+app.post("/documents", upload.any(), async (req, res) => {
   try {
-    console.log("Request Body : ",req.body);
-    console.log("Request files : ",req.files);
+    console.log("Request Body : ", req.body);
+    console.log("Request files : ", req.files);
     const AppId = req.body.AppID;
 
+    const uploadDirectory = "public/";
+
+    const filename = `${uuidv4()}${req.files[0].originalname}`;
+
+    const filePath = path.join(uploadDirectory, filename);
+    console.log("Upload DS", filePath);
+
+    fs.writeFileSync(filePath, req.files[0].buffer);
+
     const formData = new FormData();
-    formData.append('Name', req.body.Name);
-    formData.append('Type', req.body.Type);
-    formData.append('File', req.files[0].buffer, {
-      filename: req.body.Name
-    });
- 
+    formData.append("Name", req.body.Name);
+    formData.append("Type", req.body.Type);
+    formData.append("File", fs.createReadStream(filePath));
 
     const response = await axios.post(
       `https://uat.rwaapps.net:8888/v1/boarding/applications/${AppId}/documents`,
@@ -122,8 +131,8 @@ app.post('/documents', upload.any(), async (req, res) => {
       {
         headers: {
           ...formData.getHeaders(), // Set appropriate headers for FormData
-          Authorization: `Bearer ${accessToken}`
-        }
+          Authorization: `Bearer ${accessToken}`,
+        },
       }
     );
 
@@ -225,7 +234,6 @@ app.post("/cities", async (req, res) => {
     res.json("No state for this country");
   }
 });
-
 
 // Start the server
 app.listen(port, () => {
