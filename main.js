@@ -141,6 +141,7 @@ app.post("/documents", upload.any(), async (req, res) => {
   })
   res.json(arr);
 
+
 } catch (error) {
     console.error("Error calling API:", error);
     res.status(500).json(error);
