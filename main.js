@@ -108,26 +108,34 @@ app.post('/documents', upload.any(), async (req, res) => {
     console.log("Request files : ",req.files);
     const AppId = req.body.AppID;
 
-    const formData = new FormData();
-    formData.append('Name', req.body.Name);
-    formData.append('Type', req.body.Type);
-    formData.append('File', req.files[0].buffer, {
-      filename: req.body.Name
-    });
- 
 
-    const response = await axios.post(
-      `https://uat.rwaapps.net:8888/v1/boarding/applications/${AppId}/documents`,
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders(), // Set appropriate headers for FormData
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    );
 
-    res.json(response.data);
+    // const UtilityBillformData = new FormData();
+    // UtilityBillformData.append('Name', req.body.utilityBillFileName);
+    // UtilityBillformData.append('Type', req.body.utilityBillFileType);
+    // UtilityBillformData.append('File', req.files[0].buffer, {
+    //   filename: req.body.utilityBillFileName
+    // });
+
+    // const BussinessLicenseFormData = new FormData();
+    // BussinessLicenseFormData.append('Name', req.body.businessLicenseName);
+    // BussinessLicenseFormData.append('Type', req.body.businessLicenseType);
+    // BussinessLicenseFormData.append('File', req.files[1].buffer, {
+    //   filename: req.body.businessLicenseName
+    // });
+
+    // const response = await axios.post(
+    //   `https://uat.rwaapps.net:8888/v1/boarding/applications/${AppId}/documents`,
+    //   formData,
+    //   {
+    //     headers: {
+    //       ...formData.getHeaders(), // Set appropriate headers for FormData
+    //       Authorization: `Bearer ${accessToken}`
+    //     }
+    //   }
+    // );
+    res.status(200)
+    // res.json(response.data);
   } catch (error) {
     console.error("Error calling API:", error);
     res.status(500).json(error);
