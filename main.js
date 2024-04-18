@@ -101,7 +101,7 @@ app.post("/createDraft", async (req, res) => {
 });
 
 app.post("/nmicreatemerchant", async (req, res) => {
-  const randomString = generateRandomString(5);
+  const randomString = generateRandomString(6);
   console.log("Random string",randomString);
   try {
     const options = {
