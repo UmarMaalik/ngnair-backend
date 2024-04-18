@@ -10,6 +10,8 @@ const FormData = require("form-data");
 const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
+const generateRandomString = require("./utils");
+
 // Create an Express app
 
 
@@ -28,7 +30,6 @@ const parseJsonData = express.json();
 
 app.post("/getToken", async (req, res) => {
   try {
-    console.log("the req body is", req?.body);
     const response = await axios.post(
       "https://uat.rwaapps.net:8888/oauth2/token",
       req.body,
@@ -48,7 +49,6 @@ app.post("/getToken", async (req, res) => {
 
 app.post("/mccaliases", async (req, res) => {
   try {
-    console.log(req.body, "Data getting from front end for aliases");
     const response = await axios.get(
       "https://uat.rwaapps.net:8888/v1/boarding/configurations/mcc-aliases",
       {
@@ -67,10 +67,7 @@ app.post("/mccaliases", async (req, res) => {
 
 app.post("/createDraft", async (req, res) => {
   try {
-    console.log(
-      "the req body is",
-      req?.body?.businessInformation?.businessEmail
-    );
+
     const personEmail = req?.body?.businessInformation?.businessEmail;
     // Make a GET request to the third-party API
     const response = await axios.post(
@@ -100,6 +97,57 @@ app.post("/createDraft", async (req, res) => {
     // If an error occurs, return an error message
     console.error("Error calling API:", error?.response);
     res.status(500).json({ error: "Error calling API" });
+  }
+});
+
+app.post("/nmicreatemerchant", async (req, res) => {
+  const randomString = generateRandomString(5);
+  console.log("Random string",randomString);
+  try {
+    const options = {
+      method: 'POST',
+      url: 'https://secure.nmi.com/api/v4/merchants',
+      headers: {
+        accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'v4_secret_xPewJM4nPs97TCQkxz88X637vw23DDpw' // Replace with your actual API key
+      },
+      data: {
+        accountInfo: {
+          checkAccount: '123123123',
+          checkAba: '123123123',
+          accountType: 'checking',
+          accountHolderType: 'business'
+        },
+        language: 'en_US',
+        phone: '555-555-5555',
+        email: 'someone@example.com',
+        lastName: 'Doe',
+        firstName: 'Jane',
+        timezone: 'America/Chicago',
+        zip: '60601',
+        state: 'IL',
+        city: 'Chicago',
+        address1: '123 Fake St.',
+        country: 'US',
+        company: 'ACME, Inc.',
+        type: 'gateway',
+        username: randomString // You can append a random string here if needed
+      }
+    };
+
+    axios.request(options)
+      .then(function (response) {
+        console.log(response.data);
+        res.status(200).json({ message: "Done with API, Success" });
+      })
+      .catch(function (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error occurred while processing the API request" });
+      });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "An unexpected error occurred" });
   }
 });
 
