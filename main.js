@@ -79,30 +79,37 @@ app.post("/createDraft", async (req, res) => {
         },
       }
     );
-    if (response) {
-      console.log("personal email", personEmail);
+    if (response && response.status === 200) {
+      // Send an email notification
       Mailto(
-        `<div><h3>Congratulations you are onboarded to our platform as a merchant.
+        `<div><h3>Congratulations! You are onboarded to our platform as a merchant.
         Please click the link to sign the required document</h3>
-       <link href='${response?.data?.urlForSigning}'>${response?.data?.urlForSigning}</link>
+       <a href='${response?.data?.urlForSigning}'>${response?.data?.urlForSigning}</a>
         </div>`,
         false,
         [],
         personEmail
       );
-    }
+
+      // Return a success message along with any relevant data
+      return res.status(200).json({
+        success: true,
+        message: "Draft created successfully",
+        data: response.data
+      });
+    } 
     // Return the response from the third-party API
     res.json(response.data);
-  } catch (error) {
-    // If an error occurs, return an error message
-    console.error("Error calling API:", error?.response);
-    res.status(500).json({ error: "Error calling API" });
+  } 
+  catch (error) {
+    console.error("Error calling API:", error);
+    res.status(error.response.status).json({ error: error.response.data });
   }
+
 });
 
 app.post("/nmicreatemerchant", async (req, res) => {
-  const randomString = generateRandomString(6);
-  console.log("Random string",randomString);
+  const randomString = generateRandomString(2);
   try {
     const options = {
       method: 'POST',
@@ -112,42 +119,74 @@ app.post("/nmicreatemerchant", async (req, res) => {
         'Content-Type': 'application/json',
         Authorization: 'v4_secret_xPewJM4nPs97TCQkxz88X637vw23DDpw' // Replace with your actual API key
       },
-      data: {
+      // data: {
+      //   accountInfo: {
+      //     checkAccount: '123123123',
+      //     checkAba: '123123123',
+      //     accountType: 'checking',
+      //     accountHolderType: 'business'
+      //   },
+      //   language: 'en_US',
+      //   phone: '555-555-5555',
+      //   email: 'someone@example.com',
+      //   lastName: 'Doe',
+      //   firstName: 'Jane',
+      //   timezone: 'America/Chicago',
+      //   zip: '60601',
+      //   state: 'IL',
+      //   city: 'Chicago',
+      //   address1: '123 Fake St.',
+      //   country: 'US',
+      //   company: 'ACME, Inc.',
+      //   type: 'gateway',
+      //   username: randomString // You can append a random string here if needed
+      // }
+
+    data: {
         accountInfo: {
-          checkAccount: '123123123',
-          checkAba: '123123123',
-          accountType: 'checking',
-          accountHolderType: 'business'
+          checkAccount: `${req.body.businessInformation?.bankInfo?.account}`,
+          checkAba:  '123123123',
+          accountHolderType: 'business',
+          accountType: 'checking'
         },
+        // accountInfo: {
+        //   checkAccount: '123123123',
+        //   checkAba: '123123123',
+        //   accountType: 'checking',
+        //   accountHolderType: 'business'
+        // },
+        username: `${req.body.owner1?.firstName}`,
         language: 'en_US',
-        phone: '555-555-5555',
-        email: 'someone@example.com',
-        lastName: 'Doe',
-        firstName: 'Jane',
+        phone: `${req.body.businessInformation?.businessPhone}`,
+        email: `${req.body.businessInformation?.businessEmail}`,
+        firstName: `${req.body.owner1?.firstName}`,
+        lastName: `${req.body.owner1?.lastName}`,
         timezone: 'America/Chicago',
-        zip: '60601',
-        state: 'IL',
-        city: 'Chicago',
-        address1: '123 Fake St.',
-        country: 'US',
-        company: 'ACME, Inc.',
-        type: 'gateway',
-        username: randomString // You can append a random string here if needed
+        zip: `${req.body.milingAddress?.postalCode}`,
+        state: `${req.body.milingAddress?.regionCode}`,
+        city: `${req.body.milingAddress?.city}`,
+        address1: `${req.body.milingAddress?.addressLine1}`,
+        country: `${req.body.milingAddress?.countryCode}`,
+        company: `${req.body.businessInformation?.legalName}`,
+        type: 'gateway'
       }
     };
 
+    console.log("Payload For NMI : ",data);
+
     axios.request(options)
       .then(function (response) {
-        console.log(response.data);
-        res.status(200).json({ message: "Done with API, Success" });
+        console.log("Data Submitted :###################### ",options);
+        console.log("NMI Request Response : ",response.data);
+        res.status(response.status).json({ message: "Done with API, Success" });
       })
       .catch(function (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error occurred while processing the API request" });
+        console.error("NMI Request Fasle Response : ",error.response.data);
+        res.status(error.response.status).json({ message: error.response.data.message , typeError : error.response.data.type });
       });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "An unexpected error occurred" });
+    console.error("Error field ====>>> ",error);
+    res.status(500).json({ message: "Error Calling API" });
   }
 });
 
@@ -155,6 +194,7 @@ app.post("/documents", upload.any(), async (req, res) => {
   try {
     console.log("Request Body : ", req.body);
     console.log("Request files : ", req.files);
+
     let arr = []
     const AppId = req.body.AppID;
 
@@ -229,17 +269,14 @@ app.post("/documents", upload.any(), async (req, res) => {
 // })
 
 app.get("/countries", async (req, res) => {
-  console.log("the data uis", data);
   const countries = [];
   try {
     for (country of data) {
-      console.log("tge data uis", country?.name);
       countries.push({
         name: country?.name,
         iso2: country?.iso2,
       });
     }
-    console.log("going to send", countries.length);
     res.json(countries);
   } catch (err) {
     return "Unable to get countries";
@@ -247,11 +284,8 @@ app.get("/countries", async (req, res) => {
 });
 
 app.post("/state", async (req, res) => {
-  console.log("the data is", req?.body?.country);
-
   const temp = data.filter((item) => item?.name === req?.body?.country);
   if (temp && temp.length !== 0) {
-    console.log("The temo uis", temp[0]?.states);
     const states = [];
     for (state of temp[0]?.states) {
       states.push({
@@ -266,14 +300,12 @@ app.post("/state", async (req, res) => {
 });
 
 app.post("/cities", async (req, res) => {
-  console.log("the req body is", req?.body);
   const tempCities = data.filter((item) => item?.name === req?.body?.country);
   if (tempCities && tempCities.length !== 0) {
     const stateCheck = tempCities[0]?.states.filter(
       (item) => item?.name === req?.body?.state
     );
     if (stateCheck && stateCheck.length !== 0) {
-      console.log("the dataa iss", stateCheck);
       const Cities = [];
       for (city of stateCheck[0]?.cities) {
         Cities.push(city?.name);
@@ -289,6 +321,4 @@ app.post("/cities", async (req, res) => {
 });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+app.listen(port);
